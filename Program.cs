@@ -6,15 +6,20 @@ namespace ReplayUpdator
 {
     class Program
     {
+        // I'm not kidding, this is the new file extension for replays
+        const string replayFileExtension = "qplay";
+        const string oldReplaysDirectory = "replays";
+        const string resultDirectory = "converted";
+
         public Program(string[] args) {
             // Make the folder for the replays to be outputted in
             Console.WriteLine("Creating converted replays folder . . .");
-            Directory.CreateDirectory("./converted");
+            Directory.CreateDirectory(resultDirectory);
 
             // Loop through each replay in the old replays folder, and update it
             Console.WriteLine("Updating replays . . .");
 
-            string[] oldReplays = Directory.GetFiles("./replays");
+            string[] oldReplays = Directory.GetFiles(oldReplaysDirectory);
             for(int i = 0; i < oldReplays.Length; i++) {
                 updateReplay(oldReplays[i]);
 
@@ -34,7 +39,7 @@ namespace ReplayUpdator
 
             // Save the loaded replay using the binary format
             string nameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
-            FileStream saveFile = File.Open("converted/" + nameWithoutExtension + ".qplay", FileMode.Create);
+            FileStream saveFile = File.Open(resultDirectory + "/" + nameWithoutExtension + "." + replayFileExtension, FileMode.Create);
             updatedReplay.saveWithNewFormat(new BinaryWriter(saveFile));
             saveFile.Close();
         }
