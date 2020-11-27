@@ -17,4 +17,12 @@ public struct Vector3 {
         writer.Write(y);
         writer.Write(z);
     }
+
+    public static Vector3 loadFromString(StringReader reader) {
+        return new Vector3(
+            float.Parse(reader.ReadWord()),
+            float.Parse(reader.ReadWord()),
+            float.Parse(reader.ReadWord())
+        );
+    }
 }
