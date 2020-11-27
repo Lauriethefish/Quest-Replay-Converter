@@ -8,7 +8,7 @@ namespace ReplayUpdator
     {
         // I'm not kidding, this is the new file extension for replays
         const string replayFileExtension = "questReplayFileForQuestDontTryOnPcAlsoPinkEraAndLillieAreCuteBtwWilliamGay";
-        const string oldReplaysDirectory = "replays_other";
+        const string oldReplaysDirectory = "replays";
         const string resultDirectory = "converted";
 
         public Program(string[] args) {
