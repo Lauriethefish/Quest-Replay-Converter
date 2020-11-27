@@ -23,8 +23,8 @@ jobs:
       run: dotnet build --configuration Release --no-restore
     - name: Test
       run: dotnet test --no-restore --verbosity normal
-    - name: Artifact Upload ${{ matrix.runtime }}
+    - name: Artifact Upload
       uses: actions/upload-artifact@v2
         with:
-          name: ReplayUpdator-${{ matrix.runtime }}
-          path: bin/Release/net5.0/${{ matrix.runtime }}/publish/
+          name: ReplayUpdator
+          path: bin/Release/net5.0/publish/
