@@ -6,6 +6,11 @@ public struct Location {
     public Vector3 position;
     public Vector3 rotation;
 
+    public Location(Vector3 position, Vector3 rotation) {
+        this.position = position;
+        this.rotation = rotation;
+    }
+
     public void saveWithNewFormat(BinaryWriter writer) {
         position.saveWithNewFormat(writer);
         rotation.saveWithNewFormat(writer);
@@ -37,8 +42,65 @@ public struct KeyFrame {
         writer.Write(combo);
         writer.Write(time);
     }
+
+    // Used in older replay formats that don't store the current rank inside the replays
+    private void getRankFromPercentage() {
+        if(percent < 0.2) {
+            rank = 0;
+        }   else if(percent < 0.35) {
+            rank = 1;
+        }   else if(percent < 0.5) {
+            rank = 2;
+        }   else if(percent < 0.65) {
+            rank = 3;
+        }   else if(percent < 0.8) {
+            rank = 4;
+        }   else if(percent < 0.9){
+            rank = 5;
+        }   else    {
+            rank = 6;
+        }
+    }
+
+    // Loads all the values of this replay from the legacy replay format, this is janky AF
+    public static KeyFrame loadFromStringNew(StringReader reader) {
+        KeyFrame result = new KeyFrame();
+        result.rightSaberLoc.position = Vector3.loadFromString(reader);
+        result.rightSaberLoc.rotation = Vector3.loadFromString(reader);
+        result.leftSaberLoc.position = Vector3.loadFromString(reader);
+        result.leftSaberLoc.rotation = Vector3.loadFromString(reader);
+        result.score = int.Parse(reader.ReadWord());
+        result.time = float.Parse(reader.ReadWord());
+        result.headLoc.position = Vector3.loadFromString(reader);
+        result.combo = int.Parse(reader.ReadWord());
+        result.percent = float.Parse(reader.ReadWord());
+        result.headLoc.rotation = Vector3.loadFromString(reader);
+        result.rank = int.Parse(reader.ReadWord());
+
+        return result;
+    }
+
+    // Loads all the values of this replay from the legacy replay format, this is janky AF
+    public static KeyFrame loadFromStringOld(StringReader reader) {
+        KeyFrame result = new KeyFrame();
+        result.rightSaberLoc.position = Vector3.loadFromString(reader);
+        result.rightSaberLoc.rotation = Vector3.loadFromString(reader);
+        result.leftSaberLoc.position = Vector3.loadFromString(reader);
+        result.leftSaberLoc.rotation = Vector3.loadFromString(reader);
+        result.score = int.Parse(reader.ReadWord());
+        result.time = float.Parse(reader.ReadWord());
+        float.Parse(reader.ReadWord()); // Energy level during this frame, now unused in the new format.
+        result.headLoc.position = Vector3.loadFromString(reader);
+        result.combo = int.Parse(reader.ReadWord());
+        // Remove the percentage sign before parsing as a float, then divide by 100 since the percentage is stored from 0.0 to 1.0 in the new format.
+        result.percent = float.Parse(reader.ReadWord().Replace("%", "")) / 100.0f;
+
+        result.getRankFromPercentage(); // Find the rank from the percentage score
+        return result;
+    }
 }
 
+// This whole struct is kinda spammy, result of needing to write lots of individual booleans
 public struct Modifiers {
     public bool instaFail;
     public bool batteryEnergy;
@@ -65,6 +127,44 @@ public struct Modifiers {
         writer.Write(slowerSong);
         writer.Write(leftHanded);
     }
+
+    public static Modifiers loadFromString(StringReader reader) {
+        Modifiers result = new Modifiers();
+
+        // Loop until all modifiers have been loaded
+        while(true) {
+            // If the next character is a digit, break since we have reached the actual beatmap data
+            if(!char.IsLetter((char) reader.Peek())) {break;}
+
+            // Read the next word, and check if it a modifier
+            string nextModifier = reader.ReadWord();
+            switch(nextModifier) {
+                // For all modifiers, if they are found we update their value to true
+                case "instaFail":
+                    result.instaFail = true; continue;
+                case "batteryEnergy":
+                    result.batteryEnergy = true; continue;
+                case "disappearingArrows":
+                    result.disappearingArrows = true; continue;
+                case "fasterSong":
+                    result.fasterSong = true; continue;
+                case "noFail":
+                    result.noFail = true; continue;
+                case "noBombs":
+                    result.noBombs = true; continue;
+                case "noObstacles":
+                    result.noObstacles = true; continue;
+                case "noArrows":
+                    result.noArrows = true; continue;
+                case "slowerSong":
+                    result.slowerSong = true; continue;
+                case "leftHanded":
+                    result.leftHanded = true; continue;
+            }
+        }
+
+        return result; // Return the fetched modifiers
+    }
 }
 
 // Stores all the data associated with one replay
@@ -86,82 +186,29 @@ public class Replay {
         }
     }
 
-    // I know that this code is awful, but it's pretty much just adapted from the old replay mod, so . . . don't blame me ¯\_(ツ)_/¯
-    public static Replay loadOldReplay(string str) {
-        const int amountPerLine = 23;
+    public static Replay loadOldReplay(string replayText) {
+        // Find if the replay file uses the "old old" format, or the "new old" format.
+        // The "old old" format stores the percentage score with a percent sign, so we can use that to check
+        bool newImplementation = !replayText.Contains('%');
 
-        string[] words = str.Split(" ");
-
-        Modifiers modifiers = new Modifiers();
+        StringReader reader = new StringReader(replayText);
         List<KeyFrame> keyFrames = new List<KeyFrame>();
-
-
-        KeyFrame nextFrame = new KeyFrame();
-
-        int timesThrough = 0;    
         
-    
-        /* Running loop till the end of the stream */
-        float floatFound = -1.0f;
-        int intFound;
-        Vector3 tempVector = new Vector3();
-        foreach(string temp in words) {    
-            /* Checking the given word is integer or not */
-            if (temp.Contains(".") && float.TryParse(temp, out floatFound)) {
-                if(timesThrough%amountPerLine == 0 || timesThrough%amountPerLine == 3 || timesThrough%amountPerLine == 6 || timesThrough%amountPerLine == 9 || timesThrough%amountPerLine == 14 || timesThrough%amountPerLine == 19) {
-                    tempVector.x = floatFound;
-                } else if(timesThrough%amountPerLine == 1 || timesThrough%amountPerLine == 4 || timesThrough%amountPerLine == 7 || timesThrough%amountPerLine == 10 || timesThrough%amountPerLine == 15 || timesThrough%amountPerLine == 20) {
-                    tempVector.y = floatFound;
-                } else if(timesThrough%amountPerLine == 2 || timesThrough%amountPerLine == 5 || timesThrough%amountPerLine == 8 || timesThrough%amountPerLine == 11 || timesThrough%amountPerLine == 16 || timesThrough%amountPerLine == 21) {
-                    tempVector.z = floatFound;
-                    if(timesThrough%amountPerLine == 2) {
-                        nextFrame.rightSaberLoc.position = tempVector;
-                    } else if(timesThrough%amountPerLine == 5) {
-                        nextFrame.rightSaberLoc.rotation = tempVector;
-                    } else if(timesThrough%amountPerLine == 8) {
-                        nextFrame.leftSaberLoc.position = tempVector;
-                    } else if(timesThrough%amountPerLine == 11) {
-                        nextFrame.leftSaberLoc.rotation = tempVector;
-                    } else if(timesThrough%amountPerLine == 16) {
-                        nextFrame.headLoc.position = tempVector;
-                    } else if(timesThrough%amountPerLine == 21) {
-                        nextFrame.headLoc.rotation = tempVector;
-                    }
-                } else if(timesThrough%amountPerLine == 13) {
-                    nextFrame.time = floatFound;
-                }
-            }
-            if(timesThrough%amountPerLine == 18) {
-                nextFrame.percent = floatFound;
-            }
-            if(int.TryParse(temp, out intFound)) {
-                if(timesThrough%amountPerLine == 12) {
-                    nextFrame.score = intFound;
-                } else if(timesThrough%amountPerLine == 17) {
-                    nextFrame.combo = intFound;
-                } else if(timesThrough%amountPerLine == 22) {
-                    nextFrame.rank = intFound;
+        Modifiers modifiers = Modifiers.loadFromString(reader); // Load the gameplay modifiers
 
-                    keyFrames.Add(nextFrame);
-                    nextFrame = new KeyFrame();
-                }
-                timesThrough++;
+        // Read each keyFrame of the replay until we're at the end of the string
+        while(reader.Peek() != -1) {
+            // Load the KeyFrame using the correct implementation
+            KeyFrame nextFrame;
+            if(newImplementation) {
+                nextFrame = KeyFrame.loadFromStringNew(reader);
+            }   else    {
+                nextFrame = KeyFrame.loadFromStringOld(reader);
             }
 
-            if(temp == "batteryEnergy") modifiers.batteryEnergy = true;
-            if(temp == "disappearingArrows") modifiers.disappearingArrows = true;
-            if(temp == "noObstacles") modifiers.noObstacles = true;
-            if(temp == "noBombs") modifiers.noBombs = true;
-            if(temp == "noArrows") modifiers.noArrows = true;
-            if(temp == "slowerSong") modifiers.slowerSong = true;
-            if(temp == "noFail") modifiers.noFail = true;
-            if(temp == "instafail") modifiers.instaFail = true;
-            if(temp == "ghostNotes") modifiers.ghostNotes = true;
-            if(temp == "fasterSong") modifiers.fasterSong = true;
-            if(temp == "slowerSong") modifiers.slowerSong = true;
-            if(temp == "leftHanded") modifiers.leftHanded = true;
+            keyFrames.Add(nextFrame);
         }
-
-        return new Replay(keyFrames.ToArray(), modifiers);
+        
+        return new Replay(keyFrames.ToArray(), new Modifiers());
     }
 }
