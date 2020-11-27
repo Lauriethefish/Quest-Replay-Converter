@@ -21,6 +21,8 @@ namespace ReplayUpdator
                 // Print a message to show progress
                 Console.WriteLine("Updated replay {0}/{1} ({2})", i + 1, oldReplays.Length, Path.GetFileNameWithoutExtension(oldReplays[i]));
             }
+
+            Console.WriteLine("All replays converted!");
         }
 
         private void updateReplay(string fileName) {
