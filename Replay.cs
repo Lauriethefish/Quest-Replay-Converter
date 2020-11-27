@@ -86,6 +86,7 @@ public class Replay {
         }
     }
 
+    // I know that this code is awful, but it's pretty much just adapted from the old replay mod, so . . . don't blame me ¯\_(ツ)_/¯
     public static Replay loadOldReplay(string str) {
         const int amountPerLine = 23;
 
