@@ -34,8 +34,15 @@ namespace ReplayUpdator
             // Read the contents of the replay file as text
             string replayContents = File.ReadAllText(fileName);
 
-            // Load it using the old method
-            Replay updatedReplay = Replay.loadOldReplay(replayContents);
+            // Display an error if the replay failed to avoid crashing the program
+            Replay updatedReplay;
+            try {
+                // Load it using the old method
+                updatedReplay = Replay.loadOldReplay(replayContents);
+            }   catch(Exception ex) {
+                Console.Error.WriteLine("An error occured while processing replay {0}: {1}", fileName, ex.Message);
+                return;
+            }
 
             // Save the loaded replay using the binary format
             string nameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
