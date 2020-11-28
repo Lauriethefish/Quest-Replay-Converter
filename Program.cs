@@ -19,6 +19,12 @@ namespace ReplayUpdator
             // Loop through each replay in the old replays folder, and update it
             Console.WriteLine("Updating replays . . .");
 
+            // Check to see if the replays directory exists
+            if(!Directory.Exists(oldReplaysDirectory)) {
+                Console.Error.WriteLine("Replays directory \"{0}\" not found. Please put your replays in this directory!", oldReplaysDirectory);
+                return;
+            }
+
             string[] oldReplays = Directory.GetFiles(oldReplaysDirectory);
             for(int i = 0; i < oldReplays.Length; i++) {
                 updateReplay(oldReplays[i]);
