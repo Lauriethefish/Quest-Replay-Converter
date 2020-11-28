@@ -27,5 +27,5 @@ jobs:
     - name: Artifact Upload ${{ matrix.runtime }}
       uses: actions/upload-artifact@v2
       with:
-        name: ReplayUpdator
+        name: ${{ matrix.runtime }}
         path: bin/Release/netcoreapp3.1/${{ matrix.runtime }}/publish/
