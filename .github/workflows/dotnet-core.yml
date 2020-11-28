@@ -8,6 +8,9 @@ on:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        runtime: ['ubuntu-x64', 'win-x64', 'osx-x64']
 
     runs-on: ubuntu-latest
 
@@ -19,12 +22,10 @@ jobs:
         dotnet-version: 3.1.301
     - name: Install dependencies
       run: dotnet restore
-    - name: Build
-      run: dotnet build --configuration Release --no-restore
-    - name: Test
-      run: dotnet test --no-restore --verbosity normal
-    - name: Artifact Upload
+    - name: Build ${{ matrix.runtime }}
+      run: dotnet publish -r ${{ matrix.runtime }} -c Release
+    - name: Artifact Upload ${{ matrix.runtime }}
       uses: actions/upload-artifact@v2
       with:
         name: ReplayUpdator
-        path: bin/Release/netcoreapp3.1/
+        path: bin/Release/netcoreapp3.1/${{ matrix.runtime }}/publish/
