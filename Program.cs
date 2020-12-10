@@ -28,7 +28,7 @@ namespace ReplayUpdator
             if (selection.StartsWith("y")) PullReplays();
 
 
-            recursivefoldercheck(AppDomain.CurrentDomain.BaseDirectory);
+            recursiveFolderCheck(AppDomain.CurrentDomain.BaseDirectory);
             if (!Directory.Exists(oldReplaysDirectory)) {
                 Console.Error.WriteLine("Replays directory \"{0}\" not found. Please put your replays in this directory!", oldReplaysDirectory);
                 Console.ReadLine();
@@ -57,7 +57,7 @@ namespace ReplayUpdator
             adb("pull /sdcard/Android/data/com.beatgames.beatsaber/files/replays \"" + AppDomain.CurrentDomain.BaseDirectory.Substring(0, AppDomain.CurrentDomain.BaseDirectory.Length - 1) + "\"");
         }
 
-        private Boolean adb(String Argument)
+        private bool adb(String Argument)
         {
             ArrayList ADBPaths = new ArrayList();
             // Add all paths to ADB (with file extension) here
@@ -106,12 +106,12 @@ namespace ReplayUpdator
             return false;
         }
 
-        private void recursivefoldercheck(String folder)
+        private void recursiveFolderCheck(String folder)
         {
             // Move all files that end with .txt in the programs folder into the replays folder
             foreach (String CurrentFolder in Directory.GetDirectories(folder))
             {
-                recursivefoldercheck(CurrentFolder);
+                recursiveFolderCheck(CurrentFolder);
                 String FolderName = new DirectoryInfo(CurrentFolder).Name;
                 if (!FolderName.EndsWith(oldReplaysDirectory))
                 {
@@ -138,7 +138,7 @@ namespace ReplayUpdator
             }
         }
 
-        private Boolean updateReplay(string fileName, int CurrentFile) {
+        private bool updateReplay(string fileName, int CurrentFile) {
             // Check if the file is a replay
             if(!fileName.EndsWith(".txt"))
             {
@@ -147,7 +147,7 @@ namespace ReplayUpdator
                     Console.WriteLine("File " + CurrentFile + "/" + Directory.GetFiles(oldReplaysDirectory).Length + " (" + Path.GetFileNameWithoutExtension(fileName) + ") is a new Replay. Skipping.");
                 } else
                 {
-                    Console.WriteLine("File " + CurrentFile + "/" + Directory.GetFiles(oldReplaysDirectory).Length + " (" + Path.GetFileNameWithoutExtension(fileName) + ") is no old Replay. Skipping.");
+                    Console.WriteLine("File " + CurrentFile + "/" + Directory.GetFiles(oldReplaysDirectory).Length + " (" + Path.GetFileNameWithoutExtension(fileName) + ") isn't an old Replay. Skipping.");
                 }
                 return false;
             }
